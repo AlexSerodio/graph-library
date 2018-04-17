@@ -1,13 +1,11 @@
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
-
-import com.sun.javafx.collections.MappingChange.Map;
 
 public class Graph {
 
@@ -35,8 +33,8 @@ public class Graph {
 		// gets the amount of vertex
 		int size = Integer.parseInt(lines[0].trim());
 		
-		//HashMap<String,Integer> map = new HashMap<>();
-		ArrayList<String> vertices = new ArrayList<>();
+		HashMap<String,Integer> map = new HashMap<>();
+		//ArrayList<String> vertices = new ArrayList<>();
 		int index = 0;
 		for (int i = 0; i < size; i++) {
 			// separates the u and v vertex of the edge
@@ -46,16 +44,16 @@ public class Graph {
 			// gets the v (destination) vertex from the edge
 			String v = edge[1].trim();
 			
-			if (!vertices.contains(u))
-				vertices.add(u);
-			if (!vertices.contains(v))
-				vertices.add(v);
+			if (!map.containsKey(u))
+				map.put(u, index++);
+			if (!map.containsKey(v))
+				map.put(v, index++);
 		}
 		
 		// this line is not required
-		Collections.sort(vertices);
+		//Collections.sort(vertices);
 		
-		//System.out.println(vertices.toString());
+		System.out.println(map.toString());
 		
 		// creates the square matrix
 		byte[][] matrix = new byte[size][size];
@@ -69,8 +67,8 @@ public class Graph {
 			String v = edge[1].trim();
 			
 			//System.out.println(map.get(u) + " " + map.get(v));
-			matrix[vertices.indexOf(u)][vertices.indexOf(v)] = 1;
-			matrix[vertices.indexOf(v)][vertices.indexOf(u)] = 1;
+			matrix[map.get(u)][map.get(v)] = 1;
+			matrix[map.get(v)][map.get(u)] = 1;
 		}
 		
 		return matrix;
@@ -143,6 +141,62 @@ public class Graph {
 		return -1;
 	}
 	
+	public void createListFile (ArrayList<LinkedList<String>> list, String fileName) {
+		int vertices = list.size();
+		
+		int edges = 0;
+		ArrayList<Integer> rateSequence = new ArrayList<>();
+		for (int i = 0; i < list.size(); i++) {
+			int size = list.get(i).size() - 1;
+			edges += size;
+			rateSequence.add(size);
+		}
+		edges /= 2;
+		Collections.sort(rateSequence);
+				 
+		//Use try-with-resource to get auto-closeable writer instance
+		try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(fileName))) {
+		    writer.write("|V| = " + vertices);
+		    writer.newLine();
+		    writer.write("|E| = " + edges);
+		    writer.newLine();
+		    writer.write("S = " + rateSequence);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void createMatrixFile (byte[][] matrix, String fileName) {
+		int vertices = matrix.length;
+		int edges = 0;
+		ArrayList<Integer> rateSequence = new ArrayList<>();
+		
+		for (int i = 0; i < matrix.length; i++) {
+			int size = 0;
+			for (int j = 0; j < matrix.length; j++) {
+				if (matrix[i][j] == 1)
+					size++;
+			}
+			edges += size;
+			rateSequence.add(size);
+		}
+		edges /= 2;
+		Collections.sort(rateSequence);
+		
+		//Use try-with-resource to get auto-closeable writer instance
+		try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(fileName))) {
+		    writer.write("|V| = " + vertices);
+		    writer.newLine();
+		    writer.write("|E| = " + edges);
+		    writer.newLine();
+		    writer.write("S = " + rateSequence);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 	/***
 	 * Prints list elements
 	 * @param list - list to print
@@ -171,8 +225,10 @@ public class Graph {
 		
 		ArrayList<LinkedList<String>> list = graph.readInputAsList("input.txt");
 		graph.printList(list);
-	
+		graph.createListFile(list, "output-list.txt");
+		
 		byte[][] matrix = graph.readInputAsMatrix("input.txt");
 		graph.printMatrix(matrix);
+		graph.createMatrixFile(matrix, "output-matrix.txt");
 	}
 }
