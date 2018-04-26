@@ -6,14 +6,11 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 
 public class AdjacencyMatrix {
 
-	//HashMap<String,Integer> indexMap = new HashMap<>();
-	ArrayList<String> indexList = new ArrayList<>();
+	ArrayList<String> indexList;
 	
 	public byte[][] readInput (String fileName) {
 		
@@ -25,8 +22,10 @@ public class AdjacencyMatrix {
 		
 		// gets the amount of vertex
 		int size = Integer.parseInt(lines[0].trim());
-		
-		int index = 0;
+		indexList = new ArrayList<>(size);
+		// creates the square matrix
+		byte[][] matrix = new byte[size][size];
+		//int index = 0;
 		for (int i = 0; i < size; i++) {
 			// separates the u and v vertex of the edge
 			String[] edge = lines[i+1].split(" ");
@@ -34,39 +33,17 @@ public class AdjacencyMatrix {
 			String u = edge[0].trim();
 			// gets the v (destination) vertex from the edge
 			String v = edge[1].trim();
-			
-			/*if (!indexMap.containsKey(u))
-				indexMap.put(u, index++);
-			if (!indexMap.containsKey(v))
-				indexMap.put(v, index++);*/
 			
 			if (!indexList.contains(u))
 				indexList.add(u);
 			if (!indexList.contains(v))
 				indexList.add(v);
-		}
-		
-		//System.out.println(indexMap.toString());
-		//System.out.println(indexList.toString());
-		
-		// creates the square matrix
-		byte[][] matrix = new byte[size][size];
-		
-		for (int i = 0; i < size; i++) {
-			// separates the u and v vertex of the edge
-			String[] edge = lines[i+1].split(" ");
-			// gets the u (origin) vertex from the edge
-			String u = edge[0].trim();
-			// gets the v (destination) vertex from the edge
-			String v = edge[1].trim();
 			
-			//matrix[indexMap.get(u)][indexMap.get(v)] = 1;
-			//matrix[indexMap.get(v)][indexMap.get(u)] = 1;
-			
-			matrix[indexList.indexOf(u)][indexList.indexOf(v)] = 1;
-			matrix[indexList.indexOf(v)][indexList.indexOf(u)] = 1;
+			int m = indexList.indexOf(u);
+			int n = indexList.indexOf(v);
+			matrix[m][n] = 1;
+			matrix[n][m] = 1;
 		}
-		
 		return matrix;
 	}
 	
@@ -111,7 +88,6 @@ public class AdjacencyMatrix {
 	}
 	
 	private String[] readFile (String fileName) {
-
         String[] result = null;
         try {
         	String content = new String(Files.readAllBytes(Paths.get(fileName)));
@@ -119,7 +95,6 @@ public class AdjacencyMatrix {
         } catch (IOException e) {
             e.getStackTrace();
         }
-
         return result;
 	}
 	
@@ -128,47 +103,40 @@ public class AdjacencyMatrix {
 		
 		Color color[] = new Color[size];
 		int[] distance = new int[size];
-		int[] closure = new int[size];
+		String[] father = new String[size];
 		for (int i = 0; i < size; i++) {
 			color[i] = Color.WHITE;
 			distance[i] = Integer.MAX_VALUE;
-			closure[i] = Integer.MAX_VALUE;
+			father[i] = null;
 		}
 
-		int time = 0;
-		//int s = indexMap.get(start);
+		distance[0] = 0;
 		int s = indexList.indexOf(start);
-		time = DFS_VISIT(matrix, s, time, distance, closure, color);
+		DFS_VISIT(matrix, s, distance, father, color);
 		
 		for (int u = 0; u < size; u++) {
 			if (color[u] == Color.WHITE)
-				time = DFS_VISIT(matrix, u, time, distance, closure, color);
+				DFS_VISIT(matrix, u, distance, father, color);
 		}
-		
-		System.out.println("DFS - Matrix:");
-		for (int i = 0; i < size; i++)
-			System.out.println(indexList.get(i) + ": " + distance[i] + "/" + closure[i]);
+		saveSearchTree (indexList, distance, father, "matrix-tree-DFS.txt");
 	}
 	
-	private int DFS_VISIT (byte[][] matrix, int u, int time, int[] distance, int[] closure, Color[] color) {
+	private void DFS_VISIT (byte[][] matrix, int u, int[] distance, String[] father, Color[] color) {
 		color[u] = Color.GRAY;
-		time += 1;
-		distance[u] = time;
 		for (int v = 0; v < matrix.length; v++) {
 			if (matrix[u][v] > 0) {
-				if (color[v] == Color.WHITE)
-					time = DFS_VISIT(matrix, v, time, distance, closure, color);
+				if (color[v] == Color.WHITE) {
+					father[v] = indexList.get(u);
+					distance[v] = distance[u] + 1;
+					DFS_VISIT(matrix, v, distance, father, color);
+				}
 			}
 		}
 		color[u] = Color.BLACK;
-		time += 1;
-		closure[u] = time;
-		return time;
 	}
 	
 	public void search_BFS (byte[][] matrix, String start) {
 		int size = matrix.length;
-		//int s = indexMap.get(start);
 		int s = indexList.indexOf(start);
 		
 		Color color[] = new Color[size];
@@ -193,16 +161,24 @@ public class AdjacencyMatrix {
 						queue.add(v);
 						color[v] = Color.GRAY;
 						father[v] = indexList.get(u);
-						//father[v] = null;
 						distance[v] = distance[u] + 1;
 					}
 				}
 			}
 			color[u] = Color.BLACK;
+		}		
+		saveSearchTree (indexList, distance, father, "matrix-tree-BFS.txt");
+	}
+	
+	private void saveSearchTree (ArrayList<String> index, int[] distance, String[] father, String fileName) {
+		//Use try-with-resource to get auto-closeable writer instance
+		try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(fileName))) {
+			for (int i = 0; i < distance.length; i++) {
+				writer.write("| vertice: " + index.get(i) + " | nivel: " + distance[i] + " | pai: " + father[i] + " | ");
+			    writer.newLine();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
-		
-		System.out.println("BFS - Matrix:");
-		for (int i = 0; i < size; i++)
-			System.out.println(indexList.get(i) + ": " + distance[i] + " | " + father[i]);
 	}
 }

@@ -13,7 +13,7 @@ import sun.misc.Queue;
 
 public class AdjacencyList {
 
-public ArrayList<LinkedList<String>> readInput (String fileName) {
+	public ArrayList<LinkedList<String>> readInput (String fileName) {
 		
 		String[] lines = readFile(fileName);
 		
@@ -42,8 +42,8 @@ public ArrayList<LinkedList<String>> readInput (String fileName) {
 				list.get(index).add(v);
 			} else {					// otherwise, creates a new list and add u and v to it
 				list.add(new LinkedList<>());
-				list.get(list.size()-1).add(u);
-				list.get(list.size()-1).add(v);
+				list.get(list.size() - 1).add(u);
+				list.get(list.size() - 1).add(v);
 			}
 			
 			// checks if the v vertex already exist in the list
@@ -53,8 +53,8 @@ public ArrayList<LinkedList<String>> readInput (String fileName) {
 				list.get(index).add(u);
 			} else {					// otherwise, creates a new list and add v and u to it
 				list.add(new LinkedList<>());
-				list.get(list.size()-1).add(v);
-				list.get(list.size()-1).add(u);
+				list.get(list.size() - 1).add(v);
+				list.get(list.size() - 1).add(u);
 			}
 		}
 		list.trimToSize();
@@ -134,43 +134,36 @@ public ArrayList<LinkedList<String>> readInput (String fileName) {
 		
 		Color color[] = new Color[size];
 		int[] distance = new int[size];
-		int[] closure = new int[size];
+		String[] father = new String[size];
 		for (int i = 0; i < size; i++) {
 			color[i] = Color.WHITE;
 			distance[i] = Integer.MAX_VALUE;
-			closure[i] = Integer.MAX_VALUE;
+			father[i] = null;
 		}
 
-		int time = 0;
-		
+		distance[0] = 0;
 		int s = searchPosition(start, list);
-		time = DFS_VISIT(list, s, time, distance, closure, color);
+		DFS_VISIT(list, s, distance, father, color);
 		
 		for (int u = 0; u < size; u++) {
 			if (color[u] == Color.WHITE)
-				time = DFS_VISIT(list, u, time, distance, closure, color);
+				DFS_VISIT(list, u, distance, father, color);
 		}
-		
-		System.out.println("DFS - List:");
-		for (int i = 0; i < size; i++)
-			System.out.println(list.get(i).getFirst() + ": " + distance[i] + "/" + closure[i]);
-		
+		saveSearchTree (list, distance, father, "list-tree-DFS.txt");
 	}
 	
-	private int DFS_VISIT (ArrayList<LinkedList<String>> list, int u, int time, int[] distance, int[] closure, Color[] color) {
+	private void DFS_VISIT (ArrayList<LinkedList<String>> list, int u, int[] distance, String[] father, Color[] color) {
 		color[u] = Color.GRAY;
-		time += 1;
-		distance[u] = time;
 		LinkedList<String> sublist = list.get(u);
 		for (int i = 0; i < sublist.size(); i++) {
 			int v = searchPosition(sublist.get(i), list);
-			if (color[v] == Color.WHITE)
-				time = DFS_VISIT(list, v, time, distance, closure, color);
+			if (color[v] == Color.WHITE) {
+				father[v] = list.get(u).getFirst();
+				distance[v] = distance[u] + 1;
+				DFS_VISIT(list, v, distance, father, color);
+			}
 		}
 		color[u] = Color.BLACK;
-		time += 1;
-		closure[u] = time;
-		return time;
 	}
 	
 	public void search_BFS (ArrayList<LinkedList<String>> list, String start) {
@@ -205,9 +198,18 @@ public ArrayList<LinkedList<String>> readInput (String fileName) {
 			}
 			color[u] = Color.BLACK;
 		}
-		
-		System.out.println("BFS - List:");
-		for (int i = 0; i < size; i++)
-			System.out.println(list.get(i).getFirst() + ": " + distance[i] + " | " + father[i]);
+		saveSearchTree (list, distance, father, "list-tree-BFS.txt");
+	}
+	
+	private void saveSearchTree (ArrayList<LinkedList<String>> list, int[] distance, String[] father, String fileName) {
+		//Use try-with-resource to get auto-closeable writer instance
+		try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(fileName))) {
+			for (int i = 0; i < distance.length; i++) {
+				writer.write("| vertice: " + list.get(i).getFirst() + " | nivel: " + distance[i] + " | pai: " + father[i] + " | ");
+			    writer.newLine();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }
