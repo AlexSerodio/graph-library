@@ -1,27 +1,53 @@
-import java.util.ArrayList;
-import java.util.LinkedList;
-
+import Graph.Graph;
 import Graph.AdjacencyList;
 import Graph.AdjacencyMatrix;
 
 public class GraphRepresentation {
 
 	public static void main(String[] args) {
-		AdjacencyList al = new AdjacencyList();
-		ArrayList<LinkedList<String>> list = al.readInput("input.txt");
-		//al.print(list);
-		al.createFile(list, "output-list.txt");
 		
-		AdjacencyMatrix am = new AdjacencyMatrix();
-		byte[][] matrix = am.readInput("input.txt");
-		//am.print(matrix);
-		am.createFile(matrix, "output-matrix.txt");
+		String directory = "files//";
 		
-		al.search_DFS(list, "1");
-		am.search_DFS(matrix, "1");
+		//Graph graph;
+		AdjacencyMatrix matrix = new AdjacencyMatrix();
+		AdjacencyList list = new AdjacencyList();
+
+		list.readInput(directory + "input.txt");
+		list.saveGraphInfo(directory + "output-list.txt");
 		
-		al.search_BFS(list, "1");
-		am.search_BFS(matrix, "1");
+		matrix.readInput(directory + "input.txt");
+		matrix.saveGraphInfo(directory + "output-matrix.txt");
+		
+		list.search_DFS("1", directory + "list-tree-DFS.txt");
+		list.search_BFS("1", directory + "list-tree-BFS.txt");		
+		
+		matrix.search_DFS("1", directory + "matrix-tree-DFS.txt");
+		matrix.search_BFS("1", directory + "matrix-tree-DFS.txt");
+		
+		//System.out.println(list.toString());
+		//System.out.println(matrix.toString());
+		
+		// DIAMETER TEST
+		
+		int diameter;
+		long start, estimateTime;
+		
+		//start = System.currentTimeMillis();
+		start = System.nanoTime();
+		diameter = list.diameter();
+		//estimateTime = System.currentTimeMillis() - start;
+		estimateTime = System.nanoTime() - start;
+		System.out.print("list:\ndiameter: " + diameter);
+		System.out.println(" | time: " + estimateTime);
+		
+		
+		//start = System.currentTimeMillis();
+		start = System.nanoTime();
+		diameter = matrix.diameter();
+		//estimateTime = System.currentTimeMillis() - start;
+		estimateTime = System.nanoTime() - start;
+		System.out.print("matrix:\ndiameter: " + diameter);
+		System.out.println(" | time: " + estimateTime);
 		
 		System.out.println("done");
 	}
