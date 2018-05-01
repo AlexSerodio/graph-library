@@ -2,18 +2,20 @@ package Graph;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 
-public class AdjacencyList implements Graph {
+public class AdjacencyList implements Graph, Serializable{
 
 	public ArrayList<LinkedList<String>> list;
 	
 	public boolean readInput (String file) {
 		
+		float x = 0, y = 0;
 		String[] lines = readFile(file);
 		
 		// return null if the file is null
@@ -24,14 +26,11 @@ public class AdjacencyList implements Graph {
 		int size = Integer.parseInt(lines[0].trim());
 		
 		// creates the list of linked lists
-		list = new ArrayList<>(size);
+		list = new ArrayList<>();
 		
 		for (int i = 1; i <= size; i++) {
-			// separates the u and v vertex of the edge
 			String[] edge = lines[i].split(" ");
-			// gets the u (origin) vertex from the edge
 			String u = edge[0].trim();
-			// gets the v (destination) vertex from the edge
 			String v = edge[1].trim();
 			
 			// checks if the u vertex already exist in the list
@@ -55,6 +54,12 @@ public class AdjacencyList implements Graph {
 				list.get(list.size() - 1).add(v);
 				list.get(list.size() - 1).add(u);
 			}
+			
+			// prints the progress of the method
+			y = x;
+			x = (i / (float)size) * 100f;
+			if (Math.round(x) > Math.round(y))
+				System.out.println(Math.round(x) + "%");
 		}
 		return true;
 	}
@@ -214,21 +219,21 @@ public class AdjacencyList implements Graph {
 		int vertices = list.size();
 		
 		int edges = 0;
-		ArrayList<Integer> rateSequence = new ArrayList<>(vertices);
+		ArrayList<Integer> degreeSequence = new ArrayList<>(vertices);
 		for (int i = 0; i < list.size(); i++) {
 			int size = list.get(i).size() - 1;
 			edges += size;
-			rateSequence.add(size);
+			degreeSequence.add(size);
 		}
 		edges /= 2;
-		Collections.sort(rateSequence);
+		Collections.sort(degreeSequence);
 				 
 		try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(file))) {
 		    writer.write("|V| = " + vertices);
 		    writer.newLine();
 		    writer.write("|E| = " + edges);
 		    writer.newLine();
-		    writer.write("S = " + rateSequence);
+		    writer.write("S = " + degreeSequence);
 		} catch (IOException e) {
 			e.printStackTrace();
 			return false;

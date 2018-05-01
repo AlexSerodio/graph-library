@@ -2,39 +2,35 @@ package Graph;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 
-public class AdjacencyMatrix implements Graph {
+public class AdjacencyMatrix implements Graph, Serializable {
 
 	public byte[][] matrix;
 	public ArrayList<String> vertices;
+	private int size;
 	
 	public boolean readInput (String file) {
 		
+		float x = 0, y = 0;
 		String[] lines = readFile(file);
 		
-		// returns null if the file is null
 		if (lines == null)
 			return false;
 		
-		// gets the amount of vertex
-		int size = Integer.parseInt(lines[0].trim());
+		size = Integer.parseInt(lines[0].trim());
 		
-		// creates index list
-		vertices = new ArrayList<>(size);
-		// creates square matrix
+		vertices = new ArrayList<>();
 		matrix = new byte[size][size];
-
+		
 		for (int i = 0; i < size; i++) {
-			// separates the u and v vertex of the edge
 			String[] edge = lines[i+1].split(" ");
-			// gets the u (origin) vertex from the edge
 			String u = edge[0].trim();
-			// gets the v (destination) vertex from the edge
 			String v = edge[1].trim();
 			
 			if (!vertices.contains(u))
@@ -46,12 +42,17 @@ public class AdjacencyMatrix implements Graph {
 			int n = vertices.indexOf(v);
 			matrix[m][n] = 1;
 			matrix[n][m] = 1;
+			
+			// prints the progress of the method
+			y = x;
+			x = (i / (float)size) * 100f;
+			if (Math.round(x) > Math.round(y))
+				System.out.println(Math.round(x) + "%");
 		}
 		return true;
 	}
 	
 	public void search_DFS (String start, String output) {
-		int size = matrix.length;
 		
 		Color color[] = new Color[size];
 		int[] distance = new int[size];
@@ -75,7 +76,7 @@ public class AdjacencyMatrix implements Graph {
 	
 	private void DFS_VISIT (int u, int[] distance, String[] father, Color[] color) {
 		color[u] = Color.GRAY;
-		for (int v = 0; v < matrix.length; v++) {
+		for (int v = 0; v < size; v++) {
 			if (matrix[u][v] > 0) {
 				if (color[v] == Color.WHITE) {
 					father[v] = vertices.get(u);
@@ -88,7 +89,6 @@ public class AdjacencyMatrix implements Graph {
 	}
 	
 	public void search_BFS (String start, String output) {
-		int size = matrix.length;
 		int s = vertices.indexOf(start);
 		
 		Color color[] = new Color[size];
@@ -107,7 +107,7 @@ public class AdjacencyMatrix implements Graph {
 		
 		while (!queue.isEmpty()) {
 			int u = queue.removeFirst();
-			for (int v = 0; v < matrix.length; v++) {
+			for (int v = 0; v < size; v++) {
 				if (matrix[u][v] > 0) {
 					if (color[v] == Color.WHITE) {
 						queue.add(v);
@@ -123,7 +123,6 @@ public class AdjacencyMatrix implements Graph {
 	}
 	
 	private int search_BFS (String start, int diameter) {
-		int size = matrix.length;
 		int s = vertices.indexOf(start);
 		
 		Color color[] = new Color[size];
@@ -142,7 +141,7 @@ public class AdjacencyMatrix implements Graph {
 		
 		while (!queue.isEmpty()) {
 			int u = queue.removeFirst();
-			for (int v = 0; v < matrix.length; v++) {
+			for (int v = 0; v < size; v++) {
 				if (matrix[u][v] > 0) {
 					if (color[v] == Color.WHITE) {
 						queue.add(v);
@@ -161,7 +160,7 @@ public class AdjacencyMatrix implements Graph {
 	
 	public int diameter () { 
 		int diameter = 0;
-		for (int i = 0; i < vertices.size(); i++)
+		for (int i = 0; i < size; i++)
 			diameter = search_BFS (vertices.get(i), diameter);
 		
 		return diameter;
@@ -181,26 +180,26 @@ public class AdjacencyMatrix implements Graph {
 	public boolean saveGraphInfo (String file) {
 		int vertices = matrix.length;
 		int edges = 0;
-		ArrayList<Integer> rateSequence = new ArrayList<>();
+		ArrayList<Integer> degreeSequence = new ArrayList<>();
 		
-		for (int i = 0; i < matrix.length; i++) {
-			int size = 0;
-			for (int j = 0; j < matrix.length; j++) {
+		for (int i = 0; i < size; i++) {
+			int temp = 0;
+			for (int j = 0; j < size; j++) {
 				if (matrix[i][j] == 1)
-					size++;
+					temp++;
 			}
-			edges += size;
-			rateSequence.add(size);
+			edges += temp;
+			degreeSequence.add(temp);
 		}
 		edges /= 2;
-		Collections.sort(rateSequence);
+		Collections.sort(degreeSequence);
 		
 		try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(file))) {
 		    writer.write("|V| = " + vertices);
 		    writer.newLine();
 		    writer.write("|E| = " + edges);
 		    writer.newLine();
-		    writer.write("S = " + rateSequence);
+		    writer.write("S = " + degreeSequence);
 		} catch (IOException e) {
 			e.printStackTrace();
 			return false;
@@ -210,8 +209,8 @@ public class AdjacencyMatrix implements Graph {
 	
 	private boolean saveSearchTree (int[] distance, String[] father, String file) {
 		try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(file))) {
-			for (int i = 0; i < distance.length; i++) {
-				writer.write("| vertice: " + vertices.get(i) + " | nivel: " + distance[i] + " | pai: " + father[i] + " | ");
+			for (int i = 0; i < vertices.size(); i++) {
+				writer.write("|vertice: " + vertices.get(i) + " | nivel: " + distance[i] + " | pai: " + father[i] + " | ");
 			    writer.newLine();
 			}
 		} catch (IOException e) {
@@ -225,8 +224,7 @@ public class AdjacencyMatrix implements Graph {
 	public String toString() {
 		StringBuilder content = new StringBuilder();
 		content.append("Adjacency matrix:\n   ");
-		for (int i = 0; i < matrix.length; i++)
-			content.append(vertices.get(i)).append("   ");
+		content.append("Vertices: ").append(vertices.toString());
 		content.append("\n");
 		for (int i = 0; i < matrix.length; i++) {
 			content.append(vertices.get(i)).append("| ");
